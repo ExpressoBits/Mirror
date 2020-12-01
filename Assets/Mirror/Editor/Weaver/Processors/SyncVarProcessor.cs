@@ -107,6 +107,19 @@ namespace Mirror.Weaver
                 worker.Append(worker.Create(OpCodes.Call, WeaverTypes.getSyncVarNetworkIdentityReference));
                 worker.Append(worker.Create(OpCodes.Ret));
             }
+            else if (fd.FieldType.IsDerivedFrom<NetworkBehaviour>())
+            {
+                // todo finish this using new NB methods
+                // return this.GetSyncVarNetworkBehaviour(ref field, uint netId);
+                // this.
+                worker.Append(worker.Create(OpCodes.Ldarg_0));
+                worker.Append(worker.Create(OpCodes.Ldarg_0));
+                worker.Append(worker.Create(OpCodes.Ldfld, netFieldId));
+                worker.Append(worker.Create(OpCodes.Ldarg_0));
+                worker.Append(worker.Create(OpCodes.Ldflda, fd));
+                worker.Append(worker.Create(OpCodes.Call, WeaverTypes.getSyncVarNetworkIdentityReference));
+                worker.Append(worker.Create(OpCodes.Ret));
+            }
             // [SyncVar] int, string, etc.
             else
             {
@@ -157,6 +170,16 @@ namespace Mirror.Weaver
 
                 worker.Append(worker.Create(OpCodes.Call, WeaverTypes.syncVarNetworkIdentityEqualReference));
             }
+            else if (fd.FieldType.IsDerivedFrom<NetworkBehaviour>())
+            {
+                // todo finish this using new NB methods
+
+                // reference to netId Field to set
+                worker.Append(worker.Create(OpCodes.Ldarg_0));
+                worker.Append(worker.Create(OpCodes.Ldfld, netFieldId));
+
+                worker.Append(worker.Create(OpCodes.Call, WeaverTypes.syncVarNetworkIdentityEqualReference));
+            }
             else
             {
                 worker.Append(worker.Create(OpCodes.Ldarg_0));
@@ -201,6 +224,16 @@ namespace Mirror.Weaver
             }
             else if (fd.FieldType.Is<NetworkIdentity>())
             {
+                // reference to netId Field to set
+                worker.Append(worker.Create(OpCodes.Ldarg_0));
+                worker.Append(worker.Create(OpCodes.Ldflda, netFieldId));
+
+                worker.Append(worker.Create(OpCodes.Call, WeaverTypes.setSyncVarNetworkIdentityReference));
+            }
+            else if (fd.FieldType.IsDerivedFrom<NetworkBehaviour>())
+            {
+                // todo finish this using new NB methods
+
                 // reference to netId Field to set
                 worker.Append(worker.Create(OpCodes.Ldarg_0));
                 worker.Append(worker.Create(OpCodes.Ldflda, netFieldId));

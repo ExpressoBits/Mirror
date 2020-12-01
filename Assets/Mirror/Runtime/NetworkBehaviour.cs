@@ -418,6 +418,105 @@ namespace Mirror
             return identityField;
         }
 
+        protected bool SyncVarNetworkIdentityEqual<T>(T newBehaviour, SyncNetBehaviour syncField) where T : NetworkBehaviour
+        {
+            uint newNetId = 0;
+            int componentIndex = 0;
+            if (newBehaviour != null)
+            {
+                newNetId = newBehaviour.netId;
+                componentIndex = newBehaviour.ComponentIndex;
+                if (newNetId == 0)
+                {
+                    logger.LogWarning("SetSyncVarNetworkIdentity NetworkIdentity " + newBehaviour + " has a zero netId. Maybe it is not spawned yet?");
+                }
+            }
+
+            // netId changed?
+            return syncField.Equals(netId, componentIndex);
+        }
+
+        // helper function for [SyncVar] NetworkIdentities.
+        protected void SetSyncVarNetworkBehaviour<T>(T newBehaviour, ref T behaviourField, ulong dirtyBit, ref SyncNetBehaviour syncField) where T : NetworkBehaviour
+        {
+            if (getSyncVarHookGuard(dirtyBit))
+                return;
+
+            uint newNetId = 0;
+            int componentIndex = 0;
+            if (newBehaviour != null)
+            {
+                newNetId = newBehaviour.netId;
+                componentIndex = newBehaviour.ComponentIndex;
+                if (newNetId == 0)
+                {
+                    logger.LogWarning($"{nameof(SetSyncVarNetworkBehaviour)} NetworkIdentity " + newBehaviour + " has a zero netId. Maybe it is not spawned yet?");
+                }
+            }
+
+            // old field for log
+            SyncNetBehaviour oldField = syncField;
+            syncField = new SyncNetBehaviour(newNetId, componentIndex);
+
+            SetDirtyBit(dirtyBit);
+
+            // assign new one on the server, and in case we ever need it on client too
+            behaviourField = newBehaviour;
+
+            if (logger.LogEnabled()) logger.Log($"SetSyncVarNetworkBehaviour NetworkIdentity {GetType().Name} bit [{dirtyBit}] netIdField:{oldField}->{syncField}");
+        }
+
+        // helper function for [SyncVar] NetworkIdentities.
+        // -> ref GameObject as second argument makes OnDeserialize processing easier
+        protected T GetSyncVarNetworkBehaviour<T>(SyncNetBehaviour syncNetBehaviour, ref T behaviourField) where T : NetworkBehaviour
+        {
+            // server always uses the field
+            if (isServer)
+            {
+                return behaviourField;
+            }
+
+            // client always looks up based on netId because objects might get in and out of range
+            // over and over again, which shouldn't null them forever
+
+            if (!NetworkIdentity.spawned.TryGetValue(syncNetBehaviour.netId, out NetworkIdentity identity))
+            {
+                return null;
+            }
+            // todo do we need to valid that behaviour at index is of type T? 
+            behaviourField = identity.NetworkBehaviours[syncNetBehaviour.componentIndex] as T;
+            return behaviourField;
+        }
+
+        public struct SyncNetBehaviour : IEquatable<SyncNetBehaviour>
+        {
+            public uint netId;
+            // limtied to 255 behaviours per identity
+            public byte componentIndex;
+
+
+            public SyncNetBehaviour(uint netId, int componentIndex) : this()
+            {
+                this.netId = netId;
+                this.componentIndex = (byte)componentIndex;
+            }
+
+            public bool Equals(SyncNetBehaviour other)
+            {
+                return other.netId == netId && other.componentIndex == componentIndex;
+            }
+
+            public bool Equals(uint netId, int componentIndex)
+            {
+                return this.netId == netId && this.componentIndex == componentIndex;
+            }
+
+            public override string ToString()
+            {
+                return $"[netId:{netId} compIndex:{componentIndex}]";
+            }
+        }
+
         protected bool SyncVarEqual<T>(T value, ref T fieldValue)
         {
             // newly initialized or changed value?
