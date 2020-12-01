@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace Mirror.Tests
 {
-
     class MockPlayer : NetworkBehaviour
     {
         public struct Guild
@@ -16,9 +15,24 @@ namespace Mirror.Tests
 
     }
 
-    public class SyncVarTest
+    class GameObjectSyncVarBehaviour : NetworkBehaviour
     {
+        [SyncVar]
+        public GameObject value;
+    }
+    class NetworkIdentitySyncVarBehaviour : NetworkBehaviour
+    {
+        [SyncVar]
+        public NetworkIdentity value;
+    }
+    class NetworkBehaviourSyncVarBehaviour : NetworkBehaviour
+    {
+        //[SyncVar]
+        //public NetworkBehaviourSyncVarBehaviour value;
+    }
 
+    public class SyncVarTest : SyncVarTestBase
+    {
         [Test]
         public void TestSettingStruct()
         {
@@ -136,6 +150,100 @@ namespace Mirror.Tests
 
             // check that the syncvars got updated
             Assert.That(player2.guild.name, Is.EqualTo("Back street boys"), "Data should be synchronized");
+        }
+
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SyncsGameobject(bool intialState)
+        {
+            GameObjectSyncVarBehaviour serverObject = CreateObject<GameObjectSyncVarBehaviour>();
+            GameObjectSyncVarBehaviour clientObject = CreateObject<GameObjectSyncVarBehaviour>();
+
+            GameObject serverValue = CreateNetworkIdentity(2044).gameObject;
+
+            serverObject.value = serverValue;
+            clientObject.value = null;
+
+            bool written = SyncToClient(serverObject, clientObject, intialState);
+            Assert.IsTrue(written);
+            Assert.That(clientObject.value, Is.EqualTo(serverValue));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SyncIdentity(bool intialState)
+        {
+            NetworkIdentitySyncVarBehaviour serverObject = CreateObject<NetworkIdentitySyncVarBehaviour>();
+            NetworkIdentitySyncVarBehaviour clientObject = CreateObject<NetworkIdentitySyncVarBehaviour>();
+
+            NetworkIdentity serverValue = CreateNetworkIdentity(2045);
+
+            serverObject.value = serverValue;
+            clientObject.value = null;
+
+            bool written = SyncToClient(serverObject, clientObject, intialState);
+            Assert.IsTrue(written);
+            Assert.That(clientObject.value, Is.EqualTo(serverValue));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SyncsBehaviour(bool intialState)
+        {
+            Assert.Ignore("NotImplemented");
+            //NetworkBehaviourSyncVarBehaviour serverObject = CreateObject<NetworkBehaviourSyncVarBehaviour>();
+            //NetworkBehaviourSyncVarBehaviour clientObject = CreateObject<NetworkBehaviourSyncVarBehaviour>();
+
+            //NetworkBehaviourSyncVarBehaviour serverValue = CreateNetworkIdentity(2046).gameObject.AddComponent<NetworkBehaviourSyncVarBehaviour>();
+
+            //serverObject.value = serverValue;
+            //clientObject.value = null;
+
+            //bool written = SyncToClient(serverObject, clientObject, intialState);
+            //Assert.IsTrue(written);
+            //Assert.That(clientObject.value, Is.EqualTo(serverValue));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SyncsMultipleBehaviour(bool intialState)
+        {
+            Assert.Ignore("NotImplemented");
+            //NetworkBehaviourSyncVarBehaviour serverObject = CreateObject<NetworkBehaviourSyncVarBehaviour>();
+            //NetworkBehaviourSyncVarBehaviour clientObject = CreateObject<NetworkBehaviourSyncVarBehaviour>();
+
+            //NetworkIdentity identity = CreateNetworkIdentity(2046);
+            //NetworkBehaviourSyncVarBehaviour behaviour1 = identity.gameObject.AddComponent<NetworkBehaviourSyncVarBehaviour>();
+            //NetworkBehaviourSyncVarBehaviour behaviour2 = identity.gameObject.AddComponent<NetworkBehaviourSyncVarBehaviour>();
+            //// create array/set indexs
+            //_ = identity.NetworkBehaviours;
+
+            //int index1 = behaviour1.ComponentIndex;
+            //int index2 = behaviour2.ComponentIndex;
+
+            //// check components of same type have different indexes
+            //Assert.That(index1, Is.Not.EqualTo(index2));
+
+            //// check behaviour 1 can be synced
+            //serverObject.value = behaviour1;
+            //clientObject.value = null;
+
+            //bool written1 = SyncToClient(serverObject, clientObject, intialState);
+            //Assert.IsTrue(written1);
+            //Assert.That(clientObject.value, Is.EqualTo(behaviour1));
+
+            //// check that behaviour 2 can be synced
+            //serverObject.value = behaviour2;
+            //clientObject.value = null;
+
+            //bool written2 = SyncToClient(serverObject, clientObject, intialState);
+            //Assert.IsTrue(written2);
+            //Assert.That(clientObject.value, Is.EqualTo(behaviour2));
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -43,6 +42,20 @@ namespace Mirror.Tests
             HookCalled.Invoke(oldValue, newValue);
         }
     }
+
+    class NetworkBehaviourHookBehaviour : NetworkBehaviour
+    {
+        //[SyncVar(hook = nameof(OnValueChanged))]
+        //public NetworkBehaviourHookBehaviour value = null;
+
+        //public event Action<NetworkBehaviourHookBehaviour, NetworkBehaviourHookBehaviour> HookCalled;
+
+        //void OnValueChanged(NetworkBehaviourHookBehaviour oldValue, NetworkBehaviourHookBehaviour newValue)
+        //{
+        //   HookCalled.Invoke(oldValue, newValue);
+        //}
+    }
+
 
     class StaticHookBehaviour : NetworkBehaviour
     {
@@ -97,72 +110,8 @@ namespace Mirror.Tests
             HookCalled.Invoke(oldValue, newValue);
         }
     }
-
-
-    public class SyncVarHookTest
+    public class SyncVarHookTest : SyncVarTestBase
     {
-        private List<GameObject> spawned = new List<GameObject>();
-
-        [TearDown]
-        public void TearDown()
-        {
-            foreach (GameObject item in spawned)
-            {
-                GameObject.DestroyImmediate(item);
-            }
-            spawned.Clear();
-
-            NetworkIdentity.spawned.Clear();
-        }
-
-
-        T CreateObject<T>() where T : NetworkBehaviour
-        {
-            GameObject gameObject = new GameObject();
-            spawned.Add(gameObject);
-
-            gameObject.AddComponent<NetworkIdentity>();
-
-            T behaviour = gameObject.AddComponent<T>();
-            behaviour.syncInterval = 0f;
-
-            return behaviour;
-        }
-
-        NetworkIdentity CreateNetworkIdentity(uint netId)
-        {
-            GameObject gameObject = new GameObject();
-            spawned.Add(gameObject);
-
-            NetworkIdentity networkIdentity = gameObject.AddComponent<NetworkIdentity>();
-            networkIdentity.netId = netId;
-            NetworkIdentity.spawned[netId] = networkIdentity;
-            return networkIdentity;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serverObject"></param>
-        /// <param name="clientObject"></param>
-        /// <param name="initialState"></param>
-        /// <returns>If data was written by OnSerialize</returns>
-        public static bool SyncToClient<T>(T serverObject, T clientObject, bool initialState) where T : NetworkBehaviour
-        {
-            NetworkWriter writer = new NetworkWriter();
-            bool written = serverObject.OnSerialize(writer, initialState);
-
-            NetworkReader reader = new NetworkReader(writer.ToArray());
-            clientObject.OnDeserialize(reader, initialState);
-
-            int writeLength = writer.Length;
-            int readLength = reader.Position;
-            Assert.That(writeLength == readLength, $"OnSerializeAll and OnDeserializeAll calls write the same amount of data\n    writeLength={writeLength}\n    readLength={readLength}");
-
-            return written;
-        }
-
         [Test]
         [TestCase(true)]
         [TestCase(false)]
@@ -294,6 +243,34 @@ namespace Mirror.Tests
             bool written = SyncToClient(serverObject, clientObject, intialState);
             Assert.IsTrue(written);
             Assert.That(callCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void NetworkBehaviourHook_HookCalledWhenSyncingChangedValue(bool intialState)
+        {
+            Assert.Ignore("NotImplemented");
+            //NetworkBehaviourHookBehaviour serverObject = CreateObject<NetworkBehaviourHookBehaviour>();
+            //NetworkBehaviourHookBehaviour clientObject = CreateObject<NetworkBehaviourHookBehaviour>();
+
+            //NetworkBehaviourHookBehaviour clientValue = null;
+            //NetworkBehaviourHookBehaviour serverValue = CreateNetworkIdentity(2033).gameObject.AddComponent<NetworkBehaviourHookBehaviour>();
+
+            //serverObject.value = serverValue;
+            //clientObject.value = clientValue;
+
+            //int callCount = 0;
+            //clientObject.HookCalled += (oldValue, newValue) =>
+            //{
+            //    callCount++;
+            //    Assert.That(oldValue, Is.EqualTo(clientValue));
+            //    Assert.That(newValue, Is.EqualTo(serverValue));
+            //};
+
+            //bool written = SyncToClient(serverObject, clientObject, intialState);
+            //Assert.IsTrue(written);
+            //Assert.That(callCount, Is.EqualTo(1));
         }
 
         [Test]
